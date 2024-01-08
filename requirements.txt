@@ -1,0 +1,9 @@
+pygame
+requests
+flask
+flask_cors
+schedule
+websockets
+netifaces
+numpy
+git+https://github.com/C2Coder/jacserial@v1.2
