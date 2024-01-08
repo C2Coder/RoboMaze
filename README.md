@@ -2,8 +2,8 @@
 
 ## Library for Jaculus
 - Custom library is in the example projects included in this project
-- Sender example - a simple example that sends paint commands on the push of a button
-- Reciever example - a simple example that send commands which it recieves from radio
+- Sender example - a simple example that sends move commands on the push of a button
+- Reciever example - a simple example that send commands over serial which it recieves from radio
 
 ## How to use
 - Git clone the repo
