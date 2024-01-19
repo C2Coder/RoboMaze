@@ -27,3 +27,7 @@
 
 - If something doesnt work, send me a message on discord [@C2Coder](https://discord.com/users/612979947899846656 "My discord profile")
 
+
+## Screenshots
+- will update
+![RoboMaze app](/screenshots/RoboMaze_app.png)

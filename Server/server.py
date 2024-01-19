@@ -14,7 +14,10 @@ import asyncio
 
 class Config:
     public_server = "Robo"
-    dynamicaly_gen_keys_on_pub_server = True
+    
+    use_proxy = False
+    proxy = "hotncold.ddns.net"
+
     dgkops = False  # Dynamicaly Gen Keys On Public Server
     default_level = 0
     default_maze_size = 10
@@ -22,7 +25,6 @@ class Config:
     # kick_timeout = 5*60  # 5 minutes  (300 secs)
     # kick_timeout = 1 * 60  # 1 minute (60 secs)
     # kick_timeout = 10 # (10 secs)
-    player_timeout = 10  # 10 seconds
 
 
 colors = [
@@ -277,18 +279,15 @@ class Maze:
             ] = Maze.player_data[user_id][2]
 
     def kick_not_playing():
-        cur_time = time.time()
-        players = list(Maze.player_data.keys())
-        for user_id in players:
-            data = Maze.player_data[user_id]
-            if data[3] + Config.kick_timeout < cur_time:
-                maze_id = Maze.get_id(user_id)
-                player_list = list(Maze.players[maze_id])
-                player_list.pop(player_list.index(user_id))
-                Maze.players[maze_id] = player_list
 
-                Maze.player_data.pop(user_id)
-                print(f"Kicked {user_id}")
+        cur_time = time.time()
+        
+        for maze_id in list(Maze.players.keys()):
+            for user_id in Maze.players[maze_id]:
+                player_data = Maze.player_data[user_id]
+                if player_data[3] + Config.kick_timeout < cur_time:
+                    print(f"Kicked {user_id}")
+                    Maze.players[maze_id].pop(Maze.players[maze_id].index(user_id))
 
 
 class Logger:
@@ -380,7 +379,10 @@ class Server:
         s.connect(("8.8.8.8", 80))
         return s.getsockname()[0]
 
-    local_ip = getIp()
+    if Config.use_proxy:
+        local_ip = Config.proxy
+    else:
+        local_ip = getIp()
 
     def loop():
         app.static_folder = "static"

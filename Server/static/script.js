@@ -106,13 +106,7 @@ async function start() {
 
 function set_size(){
   var canvas = document.getElementById("canvas")
-  if (size < 50){
-    pixel_size = 20
-  }
-  else{
-    pixel_size = 10
-  }
-
+  pixel_size = 100
   canvas.width = size * pixel_size;
   canvas.height = size * pixel_size;
 }

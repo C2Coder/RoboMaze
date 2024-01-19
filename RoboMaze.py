@@ -120,7 +120,7 @@ else:
 class Game:
     id_timeouts = {}
 
-    timeout_interval = 500  # 500ms
+    timeout_interval = 100  # 500ms
 
     size = data.size
     window_size = data.window_size
@@ -140,8 +140,8 @@ class Game:
         cmd = toks[1].lower()
 
         # Handle timeouts
-        if (user_id in list(Game.id_timeouts.keys())) and user_id != "C2C":
-        #if user_id in Game.id_timeouts:
+        #if (user_id in list(Game.id_timeouts.keys())) and user_id != "C2C":
+        if user_id in Game.id_timeouts:
             return
         else:
             Game.id_timeouts[user_id] = pygame.time.get_ticks()
@@ -329,7 +329,7 @@ def main():
     # Variable to keep the main loop running
     running = True
 
-    pygame.time.set_timer(pygame.USEREVENT, 500)  # every 5s
+    pygame.time.set_timer(pygame.USEREVENT, 100)  # every 5s
     pygame.time.set_timer(pygame.USEREVENT_DROPFILE, 100)  # every 100 ms
 
     # serial setup
@@ -379,6 +379,6 @@ def main():
 
 
 #asyncio.get_event_loop().run_until_complete(ws.send_cmd(f"C2C join {server}"))
-asyncio.get_event_loop().run_until_complete(ws.send_cmd(f"C2C join Robo"))
+#asyncio.get_event_loop().run_until_complete(ws.send_cmd(f"C2C join Robo"))
 # call main function
 main()
