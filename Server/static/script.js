@@ -1,4 +1,4 @@
-server_ip = '10.0.1.30'
+server_ip = 'hotncold.ddns.net'
 port = 8000
 ws_port = 8001
 

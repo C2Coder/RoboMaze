@@ -13,14 +13,13 @@ import asyncio
 
 
 class Config:
-    public_server = "Robo"
-    
     use_proxy = False
     proxy = "hotncold.ddns.net"
 
-    dgkops = False  # Dynamicaly Gen Keys On Public Server
+    public_server = "Robo"
+    dgkops = True  # Dynamicaly Gen Keys On Public Server
+
     default_level = 0
-    default_maze_size = 10
     kick_timeout = 10 * 60  # 10 minutes (600 secs)
     # kick_timeout = 5*60  # 5 minutes  (300 secs)
     # kick_timeout = 1 * 60  # 1 minute (60 secs)
@@ -163,7 +162,6 @@ class Maze:
                 if Config.dgkops:
                     Maze.generate_keys(maze_id, Maze.mazes[maze_id][1])
 
-                print(f"level: {Maze.mazes[maze_id][1]}")
                 keys_on_lvl = Maze.mazes[maze_id][1] + 2
                 keys_to_lvlup = keys_on_lvl * 2
 

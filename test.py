@@ -1,11 +1,22 @@
 #!/bin/python3
 
-import socket
+import websockets
+import asyncio
 
-def get_ip_address():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("1.2.3.4", 80))
-    return s.getsockname()[0]
+server_ip = "172.16.0.228"
+server = "Robo"
 
-ip = get_ip_address()
-print(ip)
+class ws:
+    port = 8001
+
+    async def send_cmd(cmd):
+        url = f"ws://{server_ip}:{ws.port}"
+        async with websockets.connect(url) as webs:
+            # Send a greeting message
+            await webs.send(cmd)
+
+# ============= Usage ============= #
+
+
+while True:
+    asyncio.get_event_loop().run_until_complete(ws.send_cmd(f"C2C join {server}"))

@@ -1,3 +1,5 @@
 save/
 logs/
 test.py
+frpc.ini
+frpc.toml
