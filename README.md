@@ -1,11 +1,21 @@
-# RoboMaze
+# RoboMaze 
 
-## Library for Jaculus
-- Custom library is in the example projects included in this project
-- Sender example - a simple example that sends move commands on the push of a button
-- Reciever example - a simple example that send commands over serial which it recieves from radio
+## WORK IN PROGRESS
 
-## How to use # BROKEN
+## Co to umí
+Podpora více hráčů v týmech
+Více serverů a světů 
+
+## Servery a světy
+
+V každém serveru může být jeden, nebo více světů
+
+## Cestování mezi světy
+
+Posbírejte barevné klíče, pomocí nich si můžete otevřít barevné dveře a to vám umožní cestovat mezi světy
+
+
+## How to use # OUTDATED
 - Git clone the repo
 `git clone https://github.com/C2Coder/RoboMaze`
 
