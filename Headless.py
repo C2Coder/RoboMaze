@@ -14,6 +14,7 @@ import threading
 server_ip = "localhost"
 server = "Robo"
 
+admin_MACs = []
 
 class logger:
     logs = []
@@ -58,16 +59,11 @@ try:
     mode = sys.argv[2]
     baud = 115200
 
-    try:
-        if sys.argv[3] == "no-post":
-            post = False
-    except:
-        post = True
 except:
     print()
-    print(f"Usage python3 Headless.py <port> <Jaculus or Normal> <no-post (optional)>")
+    print(f"Usage python3 Headless.py <port> <Jaculus or Normal>")
     print()
-    print(f"Example: python3 Headless.py COM26 Normal no-post")
+    print(f"Example: python3 Headless.py COM26 Normal")
     print(f"Example: python3 Headless.py /dev/ttyACM0 Jaculus")
     print()
     exit()
@@ -102,15 +98,21 @@ class Game:
         cmd = toks[1].lower()
 
         # Handle timeouts
-        if user_id in Game.id_timeouts and user_id != "C2C":
-            # if user_id in Game.id_timeouts:
+        if user_id in list(Game.id_timeouts) and not user_id in admin_MACs:
             return
         else:
             Game.id_timeouts[user_id] = time.time()
         try:
             if cmd == "join":
-                print(f"{user_id} >>> {cmd}")
-                data = f"{user_id} {cmd}"
+                if len(toks) > 2:
+                    maze_id = toks[2]
+
+                    print(f"{user_id} >>> {cmd} {maze_id}")
+                    data = f"{user_id} {cmd} {maze_id}"
+                else:
+                    print(f"{user_id} >>> {cmd}")
+                    data = f"{user_id} {cmd}"
+                
                 logger.log(data)
                 asyncio.get_event_loop().run_until_complete(ws.send_cmd(data))
             elif cmd == "move":
@@ -120,53 +122,15 @@ class Game:
                 else:
                     print(f"{user_id} >>> {cmd} {dir}")
 
-                    if post:
-                        data = f"{user_id} {cmd} {dir}"
-                        logger.log(data)
-                        asyncio.get_event_loop().run_until_complete(ws.send_cmd(data))
+                    data = f"{user_id} {cmd} {dir}"
+                    logger.log(data)
+                    asyncio.get_event_loop().run_until_complete(ws.send_cmd(data))
 
             elif cmd == "test":
                 print(f"{user_id} >>> {cmd}")
         except Exception:
             return
 
-# ========================= SCREEN class ========================= #
-
-
-class Screen:
-    chars = [
-        "a",
-        "b",
-        "c",
-        "d",
-        "e",
-        "f",
-        "g",
-        "h",
-        "i",
-        "j",
-        "k",
-        "l",
-        "m",
-        "n",
-        "o",
-        "p",
-        "q",
-        "r",
-        "s",
-        "t",
-        "u",
-        "v",
-        "w",
-        "x",
-        "y",
-        "z",
-        "A",
-        "B",
-        "K",
-        "L",
-        "M",
-    ]
 
 # ========================= Functions ========================= #
 

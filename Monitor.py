@@ -3,6 +3,7 @@
 import pygame
 import websockets
 import asyncio
+import sys
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
@@ -12,8 +13,22 @@ from pygame.locals import (
     QUIT,
 )
 
+# ============= Usage ============= #
+
 server_ip = "localhost"
-server = "Robo"
+
+try:
+    user = sys.argv[1]
+except:
+    print()
+    print(
+        f"Usage python3 Monitor.py <user>"
+    )
+    print()
+    print(f"Example: python3 Monitor.py Nekdo123")
+    print(f"Example: python3 Monitor.py")
+    print()
+    exit()
 
 class ws:
     port = 8001
@@ -28,7 +43,7 @@ class ws:
         url = f"ws://{server_ip}:{ws.port}"
         async with websockets.connect(url) as webs:
             # Send a greeting message
-            await webs.send(f"get_pixels {server}")
+            await webs.send(f"get_pixels {user}")
             msg = await webs.recv()
             return msg
 
@@ -36,7 +51,7 @@ class ws:
         url = f"ws://{server_ip}:{ws.port}"
         async with websockets.connect(url) as webs:
             # Send a greeting message
-            await webs.send(f"get_size {server}")
+            await webs.send(f"get_size {user}")
             msg = await webs.recv()
             return int(msg.replace("size:", ""))
 
@@ -76,73 +91,41 @@ class Game:
 
 
 class Screen:
-    colors = [
-        "#ffff00",
-        "#ccff00",
-        "#99ff00",
-        "#66ff00",
-        "#33ff00",
-        "#00ff00",
-        "#00ff33",
-        "#00ff66",
-        "#00ff99",
-        "#00ffcc",
-        "#00ffff",
-        "#00ccff",
-        "#0099ff",
-        "#0066ff",
-        "#0033ff",
-        "#0000ff",
-        "#3300ff",
-        "#6600ff",
-        "#9900ff",
-        "#cc00ff",
-        "#ff00ff",
-        "#ff00cc",
-        "#ff0099",
-        "#ff0066",
-        "#ff0033",
-        "#ff0000",
-        "#ff3300",
-        "#ff6600",
-        "#EEBB00",
-        "#222222",
-        "#FFFFFF",
-    ]
+    colors = {
+    "a":"#ffff50", # \
+    "b":"#99ff00", # |
+    "c":"#00ff99", # |
+    "e":"#0099ff", # |
+    "f":"#3300ff", # |  Used for Players
+    "g":"#9900ff", # |
+    "h":"#ff00ff", # |
+    "i":"#ff0099", # |
+    "j":"#ff3300", # |
+    "k":"#ff6600", # /
 
-    chars = [
-        "a",
-        "b",
-        "c",
-        "d",
-        "e",
-        "f",
-        "g",
-        "h",
-        "i",
-        "j",
-        "k",
-        "l",
-        "m",
-        "n",
-        "o",
-        "p",
-        "q",
-        "r",
-        "s",
-        "t",
-        "u",
-        "v",
-        "w",
-        "x",
-        "y",
-        "z",
-        "A",
-        "B",
-        "K",
-        "L",
-        "M",
-    ]
+    "A":"#ff0000", # \
+    "B":"#ffff00", # |
+    "C":"#00ff00", # |  Used for keys
+    "D":"#00ffff", # |
+    "E":"#0000ff", # /
+
+    "F":"#222222",
+    "G":"#440000",
+    "H":"#444400",
+    "I":"#004400",
+    "J":"#004444",
+    "K":"#000044",
+
+    "L":"#ffffff",
+    "M":"#ffaaaa",
+    "N":"#ffffaa",
+    "O":"#aaffaa",
+    "P":"#aaffff",
+    "Q":"#aaaaff",
+
+    "X":"#D0A000", # Point
+
+    }
 
     DEFAULT_COLOR = "L"
 
@@ -163,7 +146,7 @@ class Screen:
                 pygame.draw.rect(
                     surface,
                     pygame.Color(
-                        Screen.colors[Screen.chars.index(Screen.pixels[x][y])]
+                        Screen.colors[Screen.pixels[x][y]]
                     ),
                     (
                         x * Screen.pixel_size,
@@ -195,7 +178,7 @@ def main():
     # Variable to keep the main loop running
     running = True
 
-    pygame.time.set_timer(pygame.USEREVENT, 5000)  # every 5 s
+    pygame.time.set_timer(pygame.USEREVENT, 50)  # every 5 s
 
     # serial setup
 

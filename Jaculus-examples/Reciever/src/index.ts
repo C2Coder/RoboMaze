@@ -1,4 +1,4 @@
-import * as RM from "./libs/robomaze.js"
+import * as robomaze from "./libs/robomaze.js"
 
-RM.begin(8)
-RM.create_callback()
+robomaze.begin(8)
+robomaze.create_callback()

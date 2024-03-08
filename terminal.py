@@ -1,10 +1,9 @@
 #!/bin/python3
-
 import websockets
+import random
 import asyncio
 
-server_ip = "172.16.0.228"
-server = "Robo"
+server_ip = "localhost"
 
 class ws:
     port = 8001
@@ -19,4 +18,5 @@ class ws:
 
 
 while True:
-    asyncio.get_event_loop().run_until_complete(ws.send_cmd(f"C2C join {server}"))
+    cmd = input("-> ")
+    asyncio.get_event_loop().run_until_complete(ws.send_cmd(f"{cmd}"))

@@ -20,79 +20,76 @@ class Config:
     dgkops = True  # Dynamicaly Gen Keys On Public Server
 
     default_level = 0
+    default_world = 0  # prob gonna break stuff if you cahnge it... sooo dont change :)
     kick_timeout = 10 * 60  # 10 minutes (600 secs)
     # kick_timeout = 5*60  # 5 minutes  (300 secs)
     # kick_timeout = 1 * 60  # 1 minute (60 secs)
     # kick_timeout = 10 # (10 secs)
 
 
-colors = [
-    "#ffff00",
-    "#ccff00",
-    "#99ff00",
-    "#66ff00",
-    "#33ff00",
-    "#00ff00",
-    "#00ff33",
-    "#00ff66",
-    "#00ff99",
-    "#00ffcc",
-    "#00ffff",
-    "#00ccff",
-    "#0099ff",
-    "#0066ff",
-    "#0033ff",
-    "#0000ff",
-    "#3300ff",
-    "#6600ff",
-    "#9900ff",
-    "#cc00ff",
-    "#ff00ff",
-    "#ff00cc",
-    "#ff0099",
-    "#ff0066",
-    "#ff0033",
-    "#ff0000",
-    "#ff3300",
-    "#ff6600",
-    "#EEBB00",
-    "#222222",
-    "#FFFFFF",
-]
+class Colors:
+    colors = {
+        "a": "#ffff50",  # \
+        "b": "#99ff00",  # |
+        "c": "#00ff99",  # |
+        "d": "#0099ff",  # |
+        "e": "#3300ff",  # |  Used for Players
+        "f": "#9900ff",  # |
+        "g": "#ff00ff",  # |
+        "h": "#ff0099",  # |
+        "i": "#ff3300",  # |
+        "j": "#ff6600",  # /
+        "A": "#ff0000",  # \
+        "B": "#ffff00",  # |
+        "C": "#00ff00",  # |  Used for keys
+        "D": "#00ffff",  # |
+        "E": "#0000ff",  # /
+        "F": "#222222",  # \
+        "G": "#440000",  # |
+        "H": "#444400",  # |  Used for walls
+        "I": "#004400",  # |
+        "J": "#004444",  # |
+        "K": "#000044",  # /
+        "L": "#ffffff",  # \
+        "M": "#ffaaaa",  # |
+        "N": "#ffffaa",  # |  Used for empty spaces
+        "O": "#aaffaa",  # |
+        "P": "#aaffff",  # |
+        "Q": "#aaaaff",  # /
+        "X": "#D0A000",  # Point
+    }
 
-chars = [
-    "a",
-    "b",
-    "c",
-    "d",
-    "e",
-    "f",
-    "g",
-    "h",
-    "i",
-    "j",
-    "k",
-    "l",
-    "m",
-    "n",
-    "o",
-    "p",
-    "q",
-    "r",
-    "s",
-    "t",
-    "u",
-    "v",
-    "w",
-    "x",
-    "y",
-    "z",
-    "A",
-    "B",
-    "K",
-    "L",
-    "M",
-]
+    player_colors = (
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+    )
+
+    key_colors = ("A", "B", "C", "D", "E")
+
+    wall_colors = (
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+    )
+    empty_colors = (
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+    )
+    point_color = "X"
 
 
 def rp(pos):  # real pos
@@ -100,111 +97,130 @@ def rp(pos):  # real pos
 
 
 class Maze:
-    mazes = {}  # maze_id:[maze[][], level, collected keys]
-    sizes = {}  # maze_id:size
-    players = {}  # maze_id:user_id
-    pixels = {}  # maze_id:pixels[x][y]
-    keys = {}  # maze_id:keys[[x, y]]
-    player_data = {}  # user_id:[x, y, color/team, last time played, num of keys]
+    mazes = {}  # maze_id:[[maze[][], level, size, collected points]]
+    points = {}  # maze_id:[[[x, y]]]
+    pixels = {}  # maze_id:[[[[]]]]
+    player_data = (
+        {}
+    )  # user_id:[x, y, maze_id, world, color, team, last time played, num of points]
 
-    key_color = "K"
-    wall_color = "L"
-    empty_color = "M"
+    def get_maze_id(user_id: str) -> str:
+        try:
+            return Maze.player_data[user_id][2]  # TODO exception
+        except KeyError:
+            return ""
 
-    def get_id(user_id):
-        for key, val_list in Maze.players.items():
-            for val in val_list:
-                if val == user_id:
-                    return key
-        return None  # Return None if the value is not found
+    def get_world(user_id: str) -> int:
+        try:
+            return Maze.player_data[user_id][3]  # TODO exception
+        except KeyError:
+            return -1
 
-    def join(user_id, maze_id):
-        # remove player if joined before
-        tmp_maze_id = Maze.get_id(user_id)
-        if not tmp_maze_id is None:
-            tmp = Maze.players[tmp_maze_id]
-            tmp.pop(tmp.index(user_id))
-            Maze.players[tmp_maze_id] = tmp
+    def get_world_color(maze_id: str, world: int) -> int:
+        return 0  # TODO - future
 
+    def calc_lvlup_point(lvl: int) -> int:
+        return (lvl + 2) * 2
+
+    def calc_lvl_size(lvl: int) -> int:
+        return lvl + 4
+
+    def join(user_id: str, maze_id: str, world: int) -> None:
         # create new user
+        if not maze_id in list(Maze.mazes.keys()):
+            Maze.gen_maze(maze_id, Config.default_level, world)
+            Maze.gen_points(maze_id, world)
+            Maze.render(maze_id, world)
+
         Maze.player_data[user_id] = [
-            rp(random.randint(0, Maze.sizes[maze_id] - 1)),  # X
-            rp(random.randint(0, Maze.sizes[maze_id] - 1)),  # Y
-            chars[random.randint(0, 27)],  # color/team
+            rp(random.randint(0, Maze.mazes[maze_id][world][2] - 1)),  # X
+            rp(random.randint(0, Maze.mazes[maze_id][world][2] - 1)),  # Y
+            maze_id,  # maze_id
+            0,  # world_id
+            Colors.player_colors[
+                random.randint(0, len(Colors.player_colors) - 1)
+            ],  # color
+            user_id,  # team (default team is your user_id)
             time.time(),  # last time played
-            0,  # num of keys
+            0,  # num of points
         ]
 
-        # add player to player list
-        if maze_id in list(Maze.players.keys()):
-            tmp = list(Maze.players[maze_id])
-            tmp.append(user_id)
-            Maze.players[maze_id] = tmp
-        else:
-            Maze.players[maze_id] = [user_id]
+    def is_on_point(user_id: str) -> bool:
+        maze_id: str = Maze.player_data[user_id][2]
+        world: int = Maze.player_data[user_id][3]
 
-        tmp_maze_list = list(Maze.mazes.keys())
-
-        if not maze_id in tmp_maze_list:
-            Maze.generate(maze_id, Config.default_level)
-
-    def is_on_key(user_id, maze_id):
-        for key in Maze.keys[maze_id]:
-            if (
-                rp(key[0]) == Maze.player_data[user_id][0]
-                and rp(key[1]) == Maze.player_data[user_id][1]
+        for point in Maze.points[maze_id][world]:
+            if (rp(point[0]), rp(point[1])) == (
+                Maze.player_data[user_id][0],
+                Maze.player_data[user_id][1],
             ):
-                key_list = Maze.keys[maze_id]
-                key_list.pop(key_list.index(key))
-                Maze.mazes[maze_id][2] = Maze.mazes[maze_id][2] + 1
-                Maze.player_data[user_id][4] = Maze.player_data[user_id][4] + 1
+                print(f"user: {user_id} is on point")
+                Maze.points[maze_id][world].remove(point)
 
-                if Config.dgkops:
-                    Maze.generate_keys(maze_id, Maze.mazes[maze_id][1])
 
-                keys_on_lvl = Maze.mazes[maze_id][1] + 2
-                keys_to_lvlup = keys_on_lvl * 2
+                Maze.mazes[maze_id][world][3] += 1
+                Maze.player_data[user_id][7] += 1
 
-                if maze_id == Config.public_server:
-                    keys_to_lvlup = keys_to_lvlup * 2
+                if Config.dgkops and maze_id == Config.public_server:
+                    Maze.gen_points(maze_id, world)
 
-                if Maze.mazes[maze_id][2] >= keys_to_lvlup:
-                    Maze.mazes[maze_id][2] = 0  # set collected keys to 0
-                    Maze.mazes[maze_id][1] += 1  # level + 1
-                    Maze.generate(maze_id, Maze.mazes[maze_id][1])
-                    return True
-                elif len(Maze.keys[maze_id]) == 0:
-                    Maze.generate(maze_id, Maze.mazes[maze_id][1])
+                Maze.try_lvlup(maze_id, world)
+                return True
         return False
 
-    def gen_key(maze_id):
-        # gen key
+    def try_lvlup(maze_id: str, world: int) -> None:
+        cur_lvl = Maze.mazes[maze_id][world][1]
+        keys_to_lvlup = Maze.calc_lvlup_point(cur_lvl)
+
+        if maze_id == Config.public_server:
+            keys_to_lvlup = keys_to_lvlup * 2
+
+        if Maze.mazes[maze_id][world][3] >= keys_to_lvlup:
+            Maze.mazes[maze_id][world][3] = 0  # set collected keys to 0
+            Maze.mazes[maze_id][world][1] += 1  # level + 1
+            Maze.gen_maze(maze_id, Maze.mazes[maze_id][world][1])
+            Maze.gen_points(maze_id, world)
+            Maze.render(maze_id, world)
+        elif len(Maze.points[maze_id][world]) == 0:
+            Maze.gen_maze(maze_id, Maze.mazes[maze_id][world][1])
+            Maze.render(maze_id, world)
+    def _gen_point(maze_id: str, world: int) -> list[int]:
+        # gen point
         tmp = [
-            random.randint(0, Maze.sizes[maze_id] - 1),
-            random.randint(0, Maze.sizes[maze_id] - 1),
+            random.randint(0, Maze.mazes[maze_id][world][2] - 1),
+            random.randint(0, Maze.mazes[maze_id][world][2] - 1),
         ]
 
-        if maze_id in list(Maze.keys.keys()) and tmp in Maze.keys[maze_id]:
-            return Maze.gen_key(maze_id)
+        if maze_id in list(Maze.points.keys()) and tmp in Maze.points[maze_id][world]:
+            return Maze._gen_point(maze_id, world)
+
         return tmp
 
-    def generate_keys(maze_id, level):
+    def gen_points(maze_id: str, world: int) -> None:
         # generate keys
+        level = Maze.mazes[maze_id][world][1]
         keys_on_lvl = level + 2
 
-        if maze_id in list(Maze.keys.keys()):
-            count = len(Maze.keys[maze_id])
-            tmp = Maze.keys[maze_id]
+        if maze_id in list(Maze.points.keys()):
+            count = len(Maze.points[maze_id][world])
+            tmp = list(Maze.points[maze_id][world])
         else:
+            Maze.points[maze_id] = []
+            while len(Maze.points[maze_id]) <= world + 1:
+                Maze.points[maze_id].append([])
             count = 0
             tmp = []
-        for _ in range(keys_on_lvl - count):
-            tmp.append(Maze.gen_key(maze_id))
-        Maze.keys[maze_id] = tmp
 
-    def generate(maze_id, level):
+        for _ in range(keys_on_lvl - count):
+            tmp.append(Maze._gen_point(maze_id, world))
+
+        print(len(tmp))
+        Maze.points[maze_id][world] = list(tmp)
+
+    def gen_maze(maze_id: str, level: int, world: int) -> None:
         # generate maze
-        maze = np.ones((rp(level + 4), rp(level + 4)))
+        size = Maze.calc_lvl_size(level)
+        maze = np.ones((rp(size), rp(size)))
         x, y = (0, 0)
         stack = [(x, y)]
         while len(stack) > 0:
@@ -216,8 +232,8 @@ class Maze:
                 if (
                     nx >= 0
                     and ny >= 0
-                    and nx < level + 4
-                    and ny < level + 4
+                    and nx < size
+                    and ny < size
                     and maze[2 * nx + 1, 2 * ny + 1] == 1
                 ):
                     maze[2 * nx + 1, 2 * ny + 1] = 0
@@ -226,60 +242,93 @@ class Maze:
                     break
             else:
                 stack.pop()
+
         if maze_id in list(Maze.mazes.keys()):
-            Maze.mazes[maze_id] = [maze, level, Maze.mazes[maze_id][2]]
+            while len(Maze.mazes[maze_id]) <= world + 1:
+                Maze.mazes[maze_id].append([])
+            Maze.mazes[maze_id][world] = [maze, level, Maze.mazes[maze_id][world][2], 0]
         else:
-            Maze.mazes[maze_id] = [maze, level, Config.default_level]
+            Maze.mazes[maze_id] = [[] for _ in range(world + 1)]
+            Maze.mazes[maze_id][world] = [maze, level, Config.default_level, 0]
 
-        Maze.sizes[maze_id] = level + 4
+        Maze.mazes[maze_id][world][2] = size
 
-        Maze.generate_keys(maze_id, level)
+    def move_player(user_id: str, dir: str) -> None:
+        maze_id = Maze.get_maze_id(user_id)
+        world = Maze.get_world(user_id)
 
-    def move_player(user_id, dir):
         data = Maze.player_data[user_id]
-        maze_id = Maze.get_id(user_id)
+
+        # TODO - REMAKE
         if dir == "up":
-            if not Maze.pixels[maze_id][data[0]][data[1] - 1] == Maze.wall_color:
-                data[1] = data[1] - 1
+            if (
+                not Maze.pixels[maze_id][world][data[0]][data[1] - 1]
+                in Colors.wall_colors
+            ):
+                Maze.player_data[user_id][1] -= 1
         elif dir == "down":
-            if not Maze.pixels[maze_id][data[0]][data[1] + 1] == Maze.wall_color:
-                data[1] = data[1] + 1
+            if (
+                not Maze.pixels[maze_id][world][data[0]][data[1] + 1]
+                in Colors.wall_colors
+            ):
+                Maze.player_data[user_id][1] += 1
         elif dir == "left":
-            if not Maze.pixels[maze_id][data[0] - 1][data[1]] == Maze.wall_color:
-                data[0] = data[0] - 1
+            if (
+                not Maze.pixels[maze_id][world][data[0] - 1][data[1]]
+                in Colors.wall_colors
+            ):
+                Maze.player_data[user_id][0] -= 1
         elif dir == "right":
-            if not Maze.pixels[maze_id][data[0] + 1][data[1]] == Maze.wall_color:
-                data[0] = data[0] + 1
-        data[3] = time.time()
+            if (
+                not Maze.pixels[maze_id][world][data[0] + 1][data[1]]
+                in Colors.wall_colors
+            ):
+                Maze.player_data[user_id][0] += 1
 
-        if Maze.is_on_key(user_id, maze_id):
-            data[4] = data[4] + 1
+        Maze.player_data[user_id][6] = time.time()
 
-        Maze.player_data[user_id] = data
+        if Maze.is_on_point(user_id):
+            Maze.player_data[user_id][7] += 1
 
-    def render(maze_id):
-        Maze.pixels[maze_id] = [  # create empty array
-            [Maze.empty_color for i in range(rp(Maze.sizes[maze_id]))]
-            for j in range(rp(Maze.sizes[maze_id]))
+    def render(maze_id: str, world: int) -> None:
+        size = Maze.mazes[maze_id][world][2]
+        world_color = Maze.get_world_color(maze_id, world)
+
+        Maze.pixels[maze_id] = []
+
+        while len(Maze.pixels[maze_id]) <= world + 1:
+            Maze.pixels[maze_id].append([])
+
+        pixels = [  # create empty array
+            [Colors.empty_colors[world_color] for _ in range(rp(size))]
+            for _ in range(rp(size))
         ]
 
-        for y in range(rp(Maze.sizes[maze_id])):  # render walls
-            for x in range(rp(Maze.sizes[maze_id])):
-                if int(Maze.mazes[maze_id][0][x][y]) == 1:
-                    Maze.pixels[maze_id][x][y] = Maze.wall_color
+        for y in range(rp(size)):  # render walls
+            for x in range(rp(size)):
+                if int(Maze.mazes[maze_id][world][0][x][y]) == 1:
+                    pixels[x][y] = Colors.wall_colors[world_color]
 
-        for key in Maze.keys[maze_id]:  # render keys
-            Maze.pixels[maze_id][rp(int(key[0]))][rp(int(key[1]))] = Maze.key_color
+        for point in Maze.points[maze_id][world]:  # render keys
+            pixels[rp(int(point[0]))][rp(int(point[1]))] = Colors.point_color
 
-        for user_id in Maze.players[maze_id]:  # render players
-            Maze.pixels[maze_id][Maze.player_data[user_id][0]][
-                Maze.player_data[user_id][1]
-            ] = Maze.player_data[user_id][2]
+        for user_id in list(Maze.player_data.keys()):  # render players
+            if (
+                maze_id == Maze.player_data[user_id][2]
+                and world == Maze.player_data[user_id][3]
+            ):
+                pixels[Maze.player_data[user_id][0]][Maze.player_data[user_id][1]] = (
+                    Maze.player_data[user_id][4]
+                )
+
+        Maze.pixels[maze_id][world] = pixels
 
     def kick_not_playing():
+        # TODO
+        return
 
         cur_time = time.time()
-        
+
         for maze_id in list(Maze.players.keys()):
             for user_id in Maze.players[maze_id]:
                 player_data = Maze.player_data[user_id]
@@ -319,6 +368,8 @@ class Save:
     folder = "save/"
 
     def init():
+        # TODO + fix
+        return
         if not os.path.exists(Save.folder):
             os.mkdir(Save.folder)
 
@@ -331,10 +382,14 @@ class Save:
                 Save.save(file)
 
     def save_all():
+        # TODO + fix
+        return
         for file in Save.files:
             Save.save(file)
 
     def save(file):
+        # TODO + fix
+        return
         if file == "mazes.save":
             with open(Save.folder + file, "wb") as f:
                 pickle.dump(Maze.mazes, f)
@@ -352,6 +407,8 @@ class Save:
                 pickle.dump(Maze.keys, f)
 
     def load(file):
+        # TODO + fix
+        return
         if file == "mazes.save":
             with open(Save.folder + file, "rb") as f:
                 Maze.mazes = pickle.load(f)
@@ -407,27 +464,24 @@ class Server:
         try:
             data = data_in.strip().split()
             # data = ["elks", "paint", "41", "38", "blue"]
-
             user_id = data[0]
             cmd = data[1]
-
             if cmd == "join":
                 if len(data) == 2:
-                    Maze.join(user_id, user_id)
+                    Maze.join(user_id, user_id, Config.default_world)
                 else:
-                    Maze.join(user_id, data[2])
+                    Maze.join(user_id, data[2], Config.default_world)
 
             elif cmd == "move":
                 dir = data[2]
                 Maze.move_player(user_id, dir)
             else:
                 return "wrong cmd"
-            Logger.log("".join(data))
+            Logger.log(" ".join(data))
             return "pass"
+
         except KeyboardInterrupt:
             exit()
-        except:
-            return "failed"
 
 
 class WS:
@@ -435,33 +489,36 @@ class WS:
 
     async def handler(websocket, path):
         try:
-            data = await websocket.recv()
-            if "get_pixels" in data:
-                Maze.kick_not_playing()
-                maze_id = data.split()[1]
-                if maze_id in list(Maze.mazes.keys()):
-                    Maze.render(maze_id)
 
+            data = await websocket.recv()
+            toks = data.split(" ")
+
+            if toks[0] == "get_pixels":
+                user_id = toks[1]
+                maze_id = Maze.get_maze_id(user_id)
+                world = Maze.get_world(user_id)
+
+                if maze_id in list(Maze.mazes.keys()):
+                    Maze.render(maze_id, world)
+                    pixels = Maze.pixels[maze_id][world]
                     # backup.save()
                     response = "data:"
-                    for y in range(rp(Maze.sizes[maze_id])):
-                        for x in range(rp(Maze.sizes[maze_id])):
-                            response = response + Maze.pixels[maze_id][x][y]
+                    for y in range(rp(Maze.mazes[maze_id][world][2])):
+                        for x in range(rp(Maze.mazes[maze_id][world][2])):
+                            response += pixels[x][y]
                 else:
-                    response = "".join(
-                        [
-                            "a"
-                            for i in range(
-                                rp(Maze.sizes[maze_id]) * rp(Maze.sizes[maze_id])
-                            )
-                        ]
-                    )
+                    response = "error:get_pixels-wrong_user_id"
+
                 await websocket.send(response)
                 return
-            elif "get_size" in data:
-                # TODO send size per maze DONE!!
-                maze_id = data.split()[1]
-                response = f"size:{rp(Maze.sizes[maze_id])}"
+            elif toks[0] == "get_size":
+                user_id = toks[1]
+                maze_id = Maze.get_maze_id(user_id)
+                world = Maze.get_world(user_id)
+                if maze_id == "" or world == -1:
+                    response = f"error:get_size-wrong_user_id"
+                else:
+                    response = f"size:{rp(Maze.mazes[maze_id][world][2])}"
                 await websocket.send(response)
                 return
 
@@ -488,11 +545,13 @@ def main_page_response():
 
 
 if __name__ == "__main__":
-    Save.init()
+    # Save.init() TODO
     Logger.init()
     if not Config.public_server in list(Maze.mazes.keys()):
-        Maze.generate(Config.public_server, Config.default_level)  # create public maze
-    Maze.players[Config.public_server] = []
+        Maze.gen_maze(Config.public_server, Config.default_level, Config.default_world)
+        Maze.gen_points(Config.public_server, Config.default_world)
+        Maze.render(Config.public_server, Config.default_world)
+
     Server.edit_script()
 
     bg_t = threading.Thread(target=Server.background_func)

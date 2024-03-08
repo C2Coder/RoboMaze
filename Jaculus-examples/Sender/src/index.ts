@@ -1,21 +1,16 @@
 import * as gpio from "gpio";
-import * as RM from "./libs/robomaze.js"
+import * as robomaze from "./libs/robomaze.js"
 
-RM.begin(8); // sets up radio with group 8
-RM.set_name("ELKS"); // sets the name/identifier so the commands are "ELKS move up"
+robomaze.begin(8); // sets up radio with group 8
 
+robomaze.send("setname C2C") // sets your name/identifier to "something"
 
-console.log(RM.name);
-gpio.pinMode(18, gpio.PinMode.INPUT_PULLUP);
-gpio.pinMode(16, gpio.PinMode.INPUT_PULLUP);
+robomaze.send("join") // join a server (default is Robo) 
 
+let button = 18;
 
-gpio.on("falling", 18, ()=>{
-    RM.send_serial("move up"); // sends the command over serial
-    RM.send_radio("move up");  // sends the command over radio
-})
+gpio.pinMode(button, gpio.PinMode.INPUT_PULLUP);
 
-gpio.on("falling", 16, ()=>{
-    RM.send_serial("move down"); // sends the command over serial
-    RM.send_radio("move down");  // sends the command over radio
+gpio.on("falling", button, ()=>{
+    robomaze.send("move up");  // sends the command over radio
 })

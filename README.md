@@ -5,7 +5,7 @@
 - Sender example - a simple example that sends move commands on the push of a button
 - Reciever example - a simple example that send commands over serial which it recieves from radio
 
-## How to use
+## How to use # BROKEN
 - Git clone the repo
 `git clone https://github.com/C2Coder/RoboMaze`
 
@@ -15,11 +15,11 @@
 `pip install -r requirements.txt`
 
 - Run the app 
-    - `python3 RoboMaze.py <port> <Jaculus or Normal> <no-post (optional)>`
+    - `python3 RoboMaze.py <user> <port> <Jaculus or Normal> <no-post (optional)>`
     - if you have a board with Jaculus connected 
-    `python3 RoboMaze.py <port> Jaculus` and put the port that your elks is connected, on windows something like COM26
+    `python3 RoboMaze.py <user> <port> Jaculus` and put the port that your elks is connected, on windows something like COM26
     - if you have something else, like microbit connected
-    `python3 RoboMaze.py <port> Normal`
+    `python3 RoboMaze.py <user> <port> Normal`
     - if you don't want to send data to server `python3 RoboMaze.py <port> Jaculus no-post`
 - Run the server
     - if you want to play with more clients, use the server

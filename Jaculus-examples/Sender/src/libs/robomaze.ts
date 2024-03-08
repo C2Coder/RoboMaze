@@ -27,6 +27,6 @@ export function begin(_group: number) {
     radio.begin(_group);
 }
 
-export function send_radio(_cmd: string) {
-    radio.sendString(`${name} ${_cmd} ${Math.round(Math.random() * 1000)}`)
+export function send(_cmd: string) {
+    radio.sendString(`${_cmd} ${Math.round(Math.random() * 1000)}`)
 }
