@@ -2,26 +2,40 @@
 
 [ukázkový projekt](../robomaze/robomaze_project.zip) i s knihovnou
 
+## Příkazy
+
+- `setname [jméno]` - nastav si jméno / přezdívku  
+    - `setname C2C`
+- `join [server]` - připoj se na server, pokud nedefinuješ server, připojíš se na server s tvým jménem
+    - `join Robo`
+    - `join` = `join C2C`
+
+- `leave` - odpoj se ze serveru
+
+- `move` - posuň se po mapě (dopředu/dozadu)
+    - `move forward`
+    - `move backward`
+- `rotate` - otoč se (o 90° doleva/doprava)
+    - `rotate left`
+    - `rotate right`
+
 ## Jak hrát
 
 1. Stáhni si ukázkový projekt i s knihovnou
 
 2. Změn si jméno (pokud nechceš, nech prázdné)
     ```ts
-    robomaze.send("setname Jméno") 
-    // nebo
-    robomaze.send("setname") 
+    robomaze.send("setname [Jméno]") 
     ```
 
-
-3. Připoj se k serveru (když nezadáš žádný, připojíš se k "Robo" serveru)
+3. Připoj se k serveru (když nezadáš žádný, připojíš se k serveru s tvým jménem)
     ```ts
     robomaze.send("join")
     // nebo
-    robomaze.send("join Server") 
+    robomaze.send("join [Server]") 
     ```
 
-4. Posuň se na mapě
+4. Pohybuj se po mapě
     ```ts
     robomaze.send("move up")
     // nebo

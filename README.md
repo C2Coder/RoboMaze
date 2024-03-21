@@ -1,6 +1,6 @@
 # RoboMaze 
 
-## WORK IN PROGRESS
+## WORK IN PROGRESS - every .py file except Headless.py and server.py dont work :)
 
 ## Co to umí
 Podpora více hráčů v týmech

@@ -5,4 +5,3 @@ flask_cors
 schedule
 websockets
 numpy
-git+https://github.com/C2Coder/jacserial@v1.2

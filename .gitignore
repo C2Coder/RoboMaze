@@ -3,3 +3,6 @@ logs/
 test.py
 frpc.ini
 frpc.toml
+protocol.py
+__pycache__/
+logs*

@@ -1,16 +1,11 @@
-server_ip = '10.0.1.30'
-port = 8000
-ws_port = 8001
-proxy_addr = 'hotncold.ddns.net'
-proxy_port = 8000
-proxy_ws_port = 8001
-
-raw_pixels = "";
-
-user_id = "Robo"; // default id
-
-size = 1; // default walue
-pixel_size = 10; // default value
+server_ip = '10.0.1.30';
+http_port = 8000;
+ws_port = 8001;
+proxy_server_ip = 'hotncold.ddns.net';
+proxy_http_port = 8080;
+proxy_ws_port = 8001;
+update_interval = 1000;
+user_id = "c2c"; // default id
 
 colors = {
   a: "#ffff50", // \
@@ -51,12 +46,12 @@ async function start() {
   user_id = document.getElementById("user-id").value;
   //console.log(user_id)
   proxy_switch = document.getElementById("proxy-switch").checked;
-  console.log(proxy_switch)
+  console.log(proxy_switch);
 
   if (proxy_switch) {
-    server_ip = proxy_addr
-    port = proxy_port
-    ws_port = proxy_ws_port
+    server_ip = proxy_server_ip;
+    http_port = proxy_http_port;
+    ws_port = proxy_ws_port;
   }
 
   document.getElementById("container").remove();
@@ -69,81 +64,71 @@ async function start() {
   canvas.id = "canvas";
 
   display_div.appendChild(canvas);
-  await get_size();
-  set_size();
-  update();
+
+  connectAndUpdate();
 }
 
-function set_size() {
-  var canvas = document.getElementById("canvas");
-  pixel_size = 100;
-  canvas.width = size * pixel_size;
-  canvas.height = size * pixel_size;
-}
-
-async function sendMessageAndAwaitResponse(messageToSend) {
-  return new Promise((resolve, reject) => {
+async function connectAndUpdate() {
+  return new Promise((resolve) => {
     const socket = new WebSocket("ws://" + server_ip + ":" + ws_port);
 
-    socket.onopen = () => {
-      socket.send(messageToSend);
-    };
+    let intervalId;
 
-    socket.onmessage = (event) => {
-      resolve(event.data);
-      socket.close(); // Close the connection after receiving the response
-    };
+    socket.addEventListener("open", (event) => {
+      console.log("WebSocket Connection opened:", event);
 
-    socket.onerror = (error) => {
-      reject(error);
-    };
+      socket.send("get_pixels " + user_id);
+
+      intervalId = setInterval(() => {
+        socket.send("get_pixels " + user_id);
+      }, update_interval);
+    });
+
+    socket.addEventListener("message", (messageEvent) => {
+      console.log("Received response:", messageEvent.data);
+      raw_data = String(messageEvent.data);
+      raw_array = raw_data.split(";");
+      if (raw_array[0] == "error") {
+        console.error(raw_data);
+      } else if (raw_array.length == 3) {
+        size = Number(raw_array[2]);
+        pixels = raw_array[1];
+        pixel_size = 100; // default value
+
+        var canvas = document.getElementById("canvas");
+
+        canvas.width = size * pixel_size;
+        canvas.height = size * pixel_size;
+
+        draw_to_display(pixels, size, pixel_size);
+      }
+    });
+
+    socket.addEventListener("close", (closeEvent) => {
+      console.log("WebSocket Connection closed:", closeEvent);
+      clearInterval(intervalId);
+      resolve();
+    });
+
+    socket.addEventListener("error", (errorEvent) => {
+      console.error("WebSocket Connection error:", errorEvent);
+      resolve();
+    });
   });
 }
 
-async function get_size() {
-  try {
-    const response = await sendMessageAndAwaitResponse(`get_size ${user_id}`);
-    if (response.includes("size:")) {
-      size = response.replace("size:", "");
-    } else {
-      console.log(response);
-    }
-  } catch (error) {
-    console.error("Error occurred:", error);
-  }
-}
-
-async function get_pixels() {
-  try {
-    const response = await sendMessageAndAwaitResponse(`get_pixels ${user_id}`);
-    if (response.includes("data:")) {
-      raw_pixels = response.replace("data:", "");
-    } else {
-      console.log(response);
-    }
-  } catch (error) {
-    console.error("Error occurred:", error);
-  }
-}
-
-function draw_on_display(raw_pixels) {
+function draw_to_display(_pixels, _size, _pixel_size) {
+  console.log(_pixels);
+  console.log(_size);
+  console.log(_pixel_size);
   var c = document.getElementById("canvas");
   var ctx = c.getContext("2d");
 
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      ctx.fillStyle = colors[raw_pixels[y * size + x]];
-      ctx.fillRect(x * pixel_size, y * pixel_size, pixel_size, pixel_size);
+  for (let y = 0; y < _size; y++) {
+    for (let x = 0; x < _size; x++) {
+      ctx.fillStyle = colors[_pixels[y * _size + x]];
+      ctx.fillRect(x * _pixel_size, y * _pixel_size, _pixel_size, _pixel_size);
       ctx.stroke();
     }
   }
-}
-
-async function update() {
-  await get_size();
-  await get_pixels();
-  set_size();
-  draw_on_display(raw_pixels);
-
-  setTimeout(update, 1000);
 }
