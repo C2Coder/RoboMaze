@@ -26,7 +26,6 @@ except:
     )
     print()
     print(f"Example: python3 Monitor.py Nekdo123")
-    print(f"Example: python3 Monitor.py")
     print()
     exit()
 
