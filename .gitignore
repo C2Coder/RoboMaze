@@ -1,7 +1,8 @@
+__pycache__/
 *.save
 *logs.txt
 test.py
+protocol.py
+controller.py
 frpc.ini
 frpc.toml
-protocol.py
-__pycache__/

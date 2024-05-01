@@ -9,6 +9,8 @@ import threading
 import time
 import websockets
 import asyncio
+import hashlib
+import math
 from datetime import datetime
 
 
@@ -29,8 +31,6 @@ class Config:
 
 class Colors:
 
-    default_color = "#FF0000"
-
     def hex_to_rgb(hex_color):
         hex_color = hex_color.lstrip("#")
         return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
@@ -48,80 +48,63 @@ class Colors:
         new_rgb = tuple(int(max(0, c - 255 * factor)) for c in rgb_color)
         return Colors.rgb_to_hex(new_rgb)
 
-    def calc_empty(world_color):  # TODO - REWRITE
+    def calc_empty(world_color):
         return Colors.lighten_color(world_color, factor=0.9)
 
-    def calc_wall(world_color):  # TODO - REWRITE
-        return Colors.darken_color(world_color, factor=0.8)
+    def calc_wall(world_color):
+        return Colors.darken_color(world_color, factor=0.85)
 
-    def rand_player_color():  # TODO - REWRITE
-        return "#FF00FF"
+    def rand_player_color(user_id: str):
+        random.seed(int(hashlib.md5(user_id.encode()).hexdigest(), 16))
+        return Colors.lighten_color(
+            Colors.player_colors[random.randint(0, len(Colors.player_colors) - 1)], 0.35
+        )
 
-    def calc_point(point_value):
+    def calc_point(point_value):  # TODO - REWRITE
         return "#D0A000"
 
-    # colors = {
-    #    "a": "#ffff50",  # \
-    #    "b": "#99ff00",  # |
-    #    "c": "#00ff99",  # |
-    #    "d": "#0099ff",  # |
-    #    "e": "#3300ff",  # |  Used for Players
-    #    "f": "#9900ff",  # |
-    #    "g": "#ff00ff",  # |
-    #    "h": "#ff0099",  # |
-    #    "i": "#ff3300",  # |
-    #    "j": "#ff6600",  # /
-    #    "A": "#ff0000",  # \
-    #    "B": "#ffff00",  # |
-    #    "C": "#00ff00",  # |  Used for keys
-    #    "D": "#00ffff",  # |
-    #    "E": "#0000ff",  # /
-    #    "F": "#222222",  # \
-    #    "G": "#440000",  # |
-    #    "H": "#444400",  # |  Used for walls
-    #    "I": "#004400",  # |
-    #    "J": "#004444",  # |
-    #    "K": "#000044",  # /
-    #    "L": "#ffffff",  # \
-    #    "M": "#ffaaaa",  # |
-    #    "N": "#ffffaa",  # |  Used for empty spaces
-    #    "O": "#aaffaa",  # |
-    #    "P": "#aaffff",  # |
-    #    "Q": "#aaaaff",  # /
-    #    "X": "#D0A000",  # Point
-    # }
-    #
-    # player_colors = (
-    #    "a",
-    #    "b",
-    #    "c",
-    #    "d",
-    #    "e",
-    #    "f",
-    #    "g",
-    #    "h",
-    #    "i",
-    # )
-    #
-    # key_colors = ("A", "B", "C", "D", "E")
-    #
-    # wall_colors = (
-    #    "F",
-    #    "G",
-    #    "H",
-    #    "I",
-    #    "J",
-    #    "K",
-    # )
-    # empty_colors = (
-    #    "L",
-    #    "M",
-    #    "N",
-    #    "O",
-    #    "P",
-    #    "Q",
-    # )
-    # point_color = "X"
+    def calc_key(world: int):
+        return Colors.darken_color(Colors.world_colors[world], 0.2)  # TODO - ADD CHECK
+
+    def world_color(world: int):
+        return Colors.world_colors[world]  # TODO - ADD CHECK
+
+    world_colors = [
+        "#eeeeee",
+        "#ff00ff",
+        "#ff0000",
+        "#ffff00",
+        "#00ff00",
+        "#00ffff",
+        "#0000ff",
+    ]
+
+    player_colors = [
+        "#ff3200",
+        "#ff6600",
+        "#ffcc00",
+        "#cbff00",
+        "#99ff00",
+        "#65ff00",
+        "#33ff00",
+        "#00ff00",
+        "#00ff32",
+        "#00ff66",
+        "#00ff99",
+        "#00ffcb",
+        "#00cbff",
+        "#0099ff",
+        "#0066ff",
+        "#0033ff",
+        "#3200ff",
+        "#6500ff",
+        "#9900ff",
+        "#cc00ff",
+        "#ff00cb",
+        "#ff0098",
+        "#ff0066",
+        "#ff0033",
+    ]
 
 
 def rp(pos: int | list) -> int | list:  # real pos
@@ -139,10 +122,10 @@ def rrp(pos: int | list) -> int | list:  # reverse real pos
 
 
 class Maze:
-    # maze_id:[[maze[][], level, size, collected points, maze_color (hex)]]
-    mazes = {}
+
+    mazes = {}  # maze_id:[[maze[][], level, size, collected points, maze_color (hex)]]
     points = {}  # maze_id:[world:[[x, y, value]]]
-    keys = {}  # maze_id: [world:[[x, y, world to tp, x to tp, y to tp]]]
+    keys = {}  # maze_id: [world:[[color, x, y, world_to_tp, x_to_tp, y_to_tp]]]
     pixels = {}  # maze_id:[[[[]]]]
     player_data = (
         {}
@@ -193,7 +176,7 @@ class Maze:
             0,  # direction
             "",  # maze_id
             0,  # world_id
-            Colors.rand_player_color(),  # color
+            Colors.rand_player_color(user_id),  # color
             user_id,  # team (default team is your user_id)
             0,  # last time played
             0,  # num of points
@@ -206,9 +189,11 @@ class Maze:
 
         # create maze if not found
         if maze_id not in list(Maze.mazes.keys()):
+            print("Gen via join")
             Maze.gen_maze(maze_id, Config.default_level, world)
-            Maze.gen_points(maze_id, world)
             Maze.render(maze_id, world)
+            Maze.gen_points(maze_id, world)
+            Maze.gen_keys(maze_id)
 
         # edit the player data
         Maze.player_data[user_id] = [
@@ -217,13 +202,17 @@ class Maze:
             0,  # direction
             maze_id,  # maze_id
             world,  # world_id
-            Colors.rand_player_color(),  # color
+            Colors.rand_player_color(user_id),  # color
             user_id,  # team (default team is your user_id)
             time.time(),  # last time played
             Maze.player_data[user_id][8],  # num of points
         ]
 
     def move_player(user_id: str, dir: str) -> None:
+        if not user_id in list(Maze.player_data.keys()):
+            print(f"Playerdata of user {user_id} not found")
+            return
+
         maze_id: str = Maze.get_maze_id(user_id)
         world: int = Maze.get_world(user_id)
 
@@ -238,33 +227,185 @@ class Maze:
             if dir == "forward":
                 if not Maze.pixels[maze_id][world][data[0]][data[1] - 1] == "w":
                     Maze.player_data[user_id][1] -= 1  # Y
+
+                elif any(
+                    [Maze.player_data[user_id][0], Maze.player_data[user_id][1] - 1]
+                    == sublist[1:3]
+                    for sublist in Maze.keys[maze_id][world]
+                ):
+                    Maze.tp_player(
+                        user_id,
+                        [
+                            sublist
+                            for sublist in Maze.keys[maze_id][world]
+                            if [
+                                Maze.player_data[user_id][0],
+                                Maze.player_data[user_id][1] - 1,
+                            ]
+                            == sublist[1:3]
+                        ][0],
+                    )
+
             elif dir == "backward":
                 if not Maze.pixels[maze_id][world][data[0]][data[1] + 1] == "w":
                     Maze.player_data[user_id][1] += 1  # Y
+
+                elif any(
+                    [Maze.player_data[user_id][0], Maze.player_data[user_id][1] + 1]
+                    == sublist[1:3]
+                    for sublist in Maze.keys[maze_id][world]
+                ):
+                    Maze.tp_player(
+                        user_id,
+                        [
+                            sublist
+                            for sublist in Maze.keys[maze_id][world]
+                            if [
+                                Maze.player_data[user_id][0],
+                                Maze.player_data[user_id][1] + 1,
+                            ]
+                            == sublist[1:3]
+                        ][0],
+                    )
+
         elif rot == 1:  # right
             if dir == "forward":
                 if not Maze.pixels[maze_id][world][data[0] + 1][data[1]] == "w":
                     Maze.player_data[user_id][0] += 1  # X
+
+                elif any(
+                    [Maze.player_data[user_id][0] + 1, Maze.player_data[user_id][1]]
+                    == sublist[1:3]
+                    for sublist in Maze.keys[maze_id][world]
+                ):
+                    Maze.tp_player(
+                        user_id,
+                        [
+                            sublist
+                            for sublist in Maze.keys[maze_id][world]
+                            if [
+                                Maze.player_data[user_id][0] + 1,
+                                Maze.player_data[user_id][1],
+                            ]
+                            == sublist[1:3]
+                        ][0],
+                    )
             elif dir == "backward":
                 if not Maze.pixels[maze_id][world][data[0] - 1][data[1]] == "w":
                     Maze.player_data[user_id][0] -= 1  # X
-        elif rot == 2:  # down
 
+                elif any(
+                    [Maze.player_data[user_id][0] - 1, Maze.player_data[user_id][1]]
+                    == sublist[1:3]
+                    for sublist in Maze.keys[maze_id][world]
+                ):
+                    Maze.tp_player(
+                        user_id,
+                        [
+                            sublist
+                            for sublist in Maze.keys[maze_id][world]
+                            if [
+                                Maze.player_data[user_id][0] - 1,
+                                Maze.player_data[user_id][1],
+                            ]
+                            == sublist[1:3]
+                        ][0],
+                    )
+
+        elif rot == 2:  # down
             if dir == "forward":
                 if not Maze.pixels[maze_id][world][data[0]][data[1] + 1] == "w":
                     Maze.player_data[user_id][1] += 1  # Y
+
+                elif any(
+                    [Maze.player_data[user_id][0], Maze.player_data[user_id][1] + 1]
+                    == sublist[1:3]
+                    for sublist in Maze.keys[maze_id][world]
+                ):
+                    Maze.tp_player(
+                        user_id,
+                        [
+                            sublist
+                            for sublist in Maze.keys[maze_id][world]
+                            if [
+                                Maze.player_data[user_id][0],
+                                Maze.player_data[user_id][1] + 1,
+                            ]
+                            == sublist[1:3]
+                        ][0],
+                    )
+
             elif dir == "backward":
                 if not Maze.pixels[maze_id][world][data[0]][data[1] - 1] == "w":
                     Maze.player_data[user_id][1] -= 1  # Y
+
+                elif any(
+                    [Maze.player_data[user_id][0], Maze.player_data[user_id][1] - 1]
+                    == sublist[1:3]
+                    for sublist in Maze.keys[maze_id][world]
+                ):
+                    Maze.tp_player(
+                        user_id,
+                        [
+                            sublist
+                            for sublist in Maze.keys[maze_id][world]
+                            if [
+                                Maze.player_data[user_id][0],
+                                Maze.player_data[user_id][1] - 1,
+                            ]
+                            == sublist[1:3]
+                        ][0],
+                    )
+
         elif rot == 3:  # left
             if dir == "forward":
                 if not Maze.pixels[maze_id][world][data[0] - 1][data[1]] == "w":
                     Maze.player_data[user_id][0] -= 1  # X
+
+                elif any(
+                    [Maze.player_data[user_id][0] - 1, Maze.player_data[user_id][1]]
+                    == sublist[1:3]
+                    for sublist in Maze.keys[maze_id][world]
+                ):
+                    Maze.tp_player(
+                        user_id,
+                        [
+                            sublist
+                            for sublist in Maze.keys[maze_id][world]
+                            if [
+                                Maze.player_data[user_id][0] - 1,
+                                Maze.player_data[user_id][1],
+                            ]
+                            == sublist[1:3]
+                        ][0],
+                    )
+
             elif dir == "backward":
                 if not Maze.pixels[maze_id][world][data[0] + 1][data[1]] == "w":
                     Maze.player_data[user_id][0] += 1  # X
 
+                elif any(
+                    [Maze.player_data[user_id][0] + 1, Maze.player_data[user_id][1]]
+                    == sublist[1:3]
+                    for sublist in Maze.keys[maze_id][world]
+                ):
+                    Maze.tp_player(
+                        user_id,
+                        [
+                            sublist
+                            for sublist in Maze.keys[maze_id][world]
+                            if [
+                                Maze.player_data[user_id][0] + 1,
+                                Maze.player_data[user_id][1],
+                            ]
+                            == sublist[1:3]
+                        ][0],
+                    )
+
     def rotate_player(user_id: str, dir: str) -> None:
+        if not user_id in list(Maze.player_data.keys()):
+            print(f"Playerdata of user {user_id} not found")
+            return
         if dir == "left":
             Maze.player_data[user_id][2] -= 1
         elif dir == "right":
@@ -274,6 +415,27 @@ class Maze:
             Maze.player_data[user_id][2] = 3
         elif Maze.player_data[user_id][2] > 3:
             Maze.player_data[user_id][2] = 0
+
+    def tp_player(user_id: str, key: list):
+        data = key[3:]
+
+        dirs = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        for d in dirs:
+            try:
+
+                if (
+                    Maze.pixels[Maze.player_data[user_id][3]][data[0]][data[1] + d[0]][
+                        data[2] + d[1]
+                    ]
+                    == "e"
+                ):
+                    Maze.player_data[user_id][0] = data[1] + d[0]  # x
+                    Maze.player_data[user_id][1] = data[2] + d[1]  # y
+                    Maze.player_data[user_id][4] = data[0]  # world
+                    break
+            except KeyboardInterrupt:
+                quit()
 
     def kick_not_playing() -> None:
 
@@ -297,7 +459,7 @@ class Maze:
 
         for i, p in enumerate(Maze.points[maze_id][world]):
             if p[:2] == p_pos:
-                print(f"user: {user_id} is on point")
+                # print(f"user: {user_id} is on point")
                 Maze.points[maze_id][world].pop(i)
                 Maze.mazes[maze_id][world][3] += p[2]
                 if Config.dgkops and maze_id == Config.public_server:
@@ -308,20 +470,21 @@ class Maze:
 
     def try_lvlup(maze_id: str, world: int) -> None:
         cur_lvl = Maze.mazes[maze_id][world][1]
-        keys_to_lvlup = Maze.calc_lvlup_point(cur_lvl)
+        points_to_lvlup = Maze.calc_lvlup_point(cur_lvl)
 
         if maze_id == Config.public_server:
-            keys_to_lvlup = keys_to_lvlup * 2
+            points_to_lvlup = points_to_lvlup * 2
 
-        if Maze.mazes[maze_id][world][3] >= keys_to_lvlup:
-            Maze.mazes[maze_id][world][3] = 0  # set collected keys to 0
+        if Maze.mazes[maze_id][world][3] >= points_to_lvlup:
+            Maze.mazes[maze_id][world][3] = 0  # set collected points to 0
             Maze.mazes[maze_id][world][1] += 1  # level + 1
             Maze.gen_maze(maze_id, Maze.mazes[maze_id][world][1], world)
+            Maze.render(maze_id, world)
             Maze.gen_points(maze_id, world)
-            Maze.render(maze_id, world)
+            Maze.gen_keys(maze_id)
+
         elif len(Maze.points[maze_id][world]) == 0:
-            Maze.gen_maze(maze_id, Maze.mazes[maze_id][world][1])
-            Maze.render(maze_id, world)
+            Maze.gen_points(maze_id, world)
 
     def _gen_point(
         maze_id: str,
@@ -351,20 +514,75 @@ class Maze:
         level = Maze.mazes[maze_id][world][1]
         points_on_lvl = Maze.calc_point_count(level)
 
-        if maze_id in list(Maze.points.keys()):
-            count = len(Maze.points[maze_id][world])
-            tmp = list(Maze.points[maze_id][world])
-        else:
+        if not maze_id in list(Maze.points.keys()):
             Maze.points[maze_id] = []
-            while len(Maze.points[maze_id]) <= world + 1:
-                Maze.points[maze_id].append([])
-            count = 0
-            tmp = []
+        while len(Maze.points[maze_id]) <= world + 1:
+            Maze.points[maze_id].append([])
+
+        count = len(Maze.points[maze_id][world])
+        tmp = list(Maze.points[maze_id][world])
 
         for _ in range(points_on_lvl - count):
             tmp.append(Maze._gen_point(maze_id, world, level, len(tmp), removed_point))
 
         Maze.points[maze_id][world] = tmp.copy()
+
+    def _rand_key_pos(maze_id: str, world: int):
+
+        if len(Maze.mazes[maze_id]) <= world or len(Maze.mazes[maze_id][world]) < 2:
+            Maze.gen_maze(maze_id, Config.default_level, world)
+            Maze.render(maze_id, world)
+            Maze.gen_points(maze_id, world)
+            # Maze.gen_keys(maze_id)
+
+        maze = Maze.pixels[maze_id][world]
+        size = rp(Maze.mazes[maze_id][world][2])
+
+        empty_spots = []
+        for x in range(size):
+            for y in range(size):
+                if maze[x][y] == "e":  # Empty spot
+                    empty_spots.append((x, y))
+
+        options = []
+        for i, j in empty_spots:
+            for x, y in [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]:
+                if 0 <= x < len(maze) and 0 <= y < len(maze[0]) and maze[x][y] == "w":
+                    options.append((x, y))
+
+        choice = random.choice(options)
+
+        if any(choice == sublist[1:3] for sublist in Maze.keys[maze_id][world]):
+            return Maze._rand_key_pos(maze_id, world)
+        else:
+            return choice
+
+    def gen_key_pair(maze_id: str, world_1: int, world_2: int) -> None:
+
+        while len(Maze.keys[maze_id]) <= max(world_1, world_2) + 1:
+            Maze.keys[maze_id].append([])
+
+        pos1 = Maze._rand_key_pos(maze_id, world_1)
+        pos2 = Maze._rand_key_pos(maze_id, world_2)
+
+        Maze.keys[maze_id][world_1].append(
+            [Colors.calc_key(world_2), pos1[0], pos1[1], world_2, pos2[0], pos2[1]]
+        )
+        Maze.keys[maze_id][world_2].append(
+            [Colors.calc_key(world_1), pos2[0], pos2[1], world_1, pos1[0], pos1[1]]
+        )
+
+    def gen_keys(maze_id: str):
+        Maze.keys[maze_id] = []  # wipe keys
+
+        #                      world  world
+        Maze.gen_key_pair(maze_id, 0, 1)  # TEST
+        Maze.gen_key_pair(maze_id, 1, 3)  # TEST
+        Maze.gen_key_pair(maze_id, 3, 6)  # TEST
+        Maze.gen_key_pair(maze_id, 6, 2)  # TEST
+        Maze.gen_key_pair(maze_id, 2, 5)  # TEST
+        Maze.gen_key_pair(maze_id, 5, 4)  # TEST
+        Maze.gen_key_pair(maze_id, 1, 5)  # TEST
 
     def gen_maze(maze_id: str, level: int, world: int) -> None:
         # generate maze
@@ -396,22 +614,39 @@ class Maze:
         if maze_id in list(Maze.mazes.keys()):
             while len(Maze.mazes[maze_id]) <= world + 1:
                 Maze.mazes[maze_id].append([])
+
+            if len(Maze.mazes[maze_id][world]) > 1:
+                Maze.mazes[maze_id][world] = [
+                    maze,
+                    level,
+                    size,
+                    Maze.mazes[maze_id][world][3],
+                    Maze.mazes[maze_id][world][4],
+                ]
+            else:
+                Maze.mazes[maze_id][world] = [
+                    maze,
+                    level,
+                    size,
+                    0,
+                    Colors.world_color(world),
+                ]  # TODO - ADD COLOR BASED ON WORLD
+        else:
+            Maze.mazes[maze_id] = [[] for _ in range(world + 1)]
             Maze.mazes[maze_id][world] = [
                 maze,
                 level,
                 size,
-                Maze.mazes[maze_id][world][3],
-                Maze.mazes[maze_id][world][4],
-            ]
-        else:
-            Maze.mazes[maze_id] = [[] for _ in range(world + 1)]
-            Maze.mazes[maze_id][world] = [maze, level, size, 0, Colors.default_color]
+                0,
+                Colors.world_color(world),
+            ]  # TODO - ADD COLOR BASED ON WORLD
 
     def render(maze_id: str, world: int) -> None:
         size = Maze.mazes[maze_id][world][2]
         world_color = Maze.get_world_color(maze_id, world)
 
-        Maze.pixels[maze_id] = []
+        if not maze_id in list(Maze.pixels.keys()):
+            Maze.pixels[maze_id] = []
 
         # create empty worlds if needed
         while len(Maze.pixels[maze_id]) <= world + 1:
@@ -424,7 +659,7 @@ class Maze:
         for y in range(rp(size)):  # render walls
             for x in range(rp(size)):
                 if int(Maze.mazes[maze_id][world][0][x][y]) == 1:
-                    pixels[x][y] = "w"
+                    pixels[y][x] = "w"  # idk why but it works now so dont touch it
 
         # NOT USED
         # for point in Maze.points[maze_id][world]:  # render keys
@@ -463,7 +698,7 @@ class Maze:
         else:
             p_left = 1  # wall
 
-        if x < Maze.mazes[maze_id][world][2]:
+        if x < rp(Maze.mazes[maze_id][world][2]):
             p_right = int(Maze.mazes[maze_id][world][0][x + 1][y])
         else:
             p_right = 1  # wall
@@ -473,38 +708,78 @@ class Maze:
         else:
             p_up = 1  # wall
 
-        if y < Maze.mazes[maze_id][world][2]:
+        if y < rp(Maze.mazes[maze_id][world][2]):
             p_down = int(Maze.mazes[maze_id][world][0][x][y + 1])
         else:
             p_down = 1  # wall
 
-        out.append("_r_")  # random string so i can handle it differently
-        out.append(nick)
-        out.append(message_id)
+        sens = 0
 
         if dir == 0:  # facing up
-            out.append(str(p_left))
-            out.append(str(p_up))
-            out.append(str(p_right))
+            sens += 1 * p_up
+            sens += 2 * p_right
+            sens += 4 * p_down
+            sens += 8 * p_left
         elif dir == 1:  # facing right
-            out.append(str(p_up))
-            out.append(str(p_right))
-            out.append(str(p_down))
+            sens += 1 * p_right
+            sens += 2 * p_down
+            sens += 4 * p_left
+            sens += 8 * p_up
         elif dir == 2:  # facing down
-            out.append(str(p_right))
-            out.append(str(p_down))
-            out.append(str(p_left))
+            sens += 1 * p_down
+            sens += 2 * p_left
+            sens += 4 * p_right
+            sens += 8 * p_up
         elif dir == 3:  # facing left
-            out.append(str(p_down))
-            out.append(str(p_left))
-            out.append(str(p_up))
+            sens += 1 * p_left
+            sens += 2 * p_up
+            sens += 4 * p_right
+            sens += 8 * p_down
 
-        out.append("1" if is_on_point else "0")
-        out.append(str(x))
-        out.append(str(y))
-        out.append(str(dir))
-        out.append(str(team))
-        out.append(str(num_of_points))
+        min_distance = float("inf")
+        closest_key = None
+
+        for key in [sublist[1:3] for sublist in Maze.keys[maze_id][world]]:
+            x_k, y_k = key
+            dist = math.sqrt((x_k - x) ** 2 + (y_k - y) ** 2)
+            if dist < min_distance:
+                min_distance = dist
+                closest_key = key
+
+        x_key, y_key = closest_key
+
+        min_distance = float("inf")
+        closest_point = None
+
+        for point in [sublist[:2] for sublist in Maze.points[maze_id][world]]:
+            x_p, y_p = point
+            dist = math.sqrt((x_p - x) ** 2 + (y_p - y) ** 2)
+            if dist < min_distance:
+                min_distance = dist
+                closest_point = key
+
+        x_point, y_point = closest_point
+
+        #        8      1     1   1      1         1        1       1      1     1      = 17/22
+        # <id> <nick> <size> <x> <y> <x_point> <y_point> <x_key> <y_key> <dir> <sens>
+
+        out.append("_r_")  # random string so i can handle it differently
+
+        out.append(str(message_id))  # id
+        out.append(str(nick))  # nick
+        out.append(str(rp(Maze.mazes[maze_id][world][2])))  # size
+        out.append(str(x))  # x
+        out.append(str(y))  # y
+
+        out.append(str(x_point))  # x_point
+        out.append(str(y_point))  # y_point
+
+        out.append(str(x_key))  # x_key
+        out.append(str(y_key))  # y_key
+
+        out.append(str(dir))  # dir
+
+        out.append(str(sens))  # sens
 
         return " ".join(out)
 
@@ -546,6 +821,12 @@ class Save:
     last_backup = 0
 
     def init():
+        if not Save.folder.replace("/", "") in os.listdir():
+            os.mkdir(Save.folder)
+
+        if not Save.backup_folder.replace("/", "") in os.listdir():
+            os.mkdir(Save.backup_folder)
+
         files = os.listdir("save")
         for file in Save.files:
             if not file.replace(Save.extension, "") in files:
@@ -600,6 +881,13 @@ class Save:
                 if maze_id in list(Maze.points.keys()):
                     for p in Maze.points[maze_id][world]:
                         _tmp += f"({p[0]}, {p[1]});"
+                tmp.append(f"{' '*6}{_tmp.rstrip(';')}")
+
+                tmp.append(f"{' '*4}keys pos:")
+                _tmp = ""
+                if maze_id in list(Maze.keys.keys()):
+                    for p in Maze.keys[maze_id][world]:
+                        _tmp += f"({p[0]}, {p[1]}, {p[2]}, {p[3]}, {p[4]}, {p[5]});"
                 tmp.append(f"{' '*6}{_tmp.rstrip(';')}")
 
                 tmp.append(f"{' '*4}lvl:")
@@ -700,6 +988,24 @@ class Save:
                     .split(";")
                 ):
                     Maze.points[maze_id][world].append([int(n) for n in p.split(",")])
+            elif "keys pos:" in lines[i]:
+                i += 1
+                if not maze_id in list(Maze.keys.keys()):
+                    Maze.keys[maze_id] = []
+
+                while len(Maze.keys[maze_id]) <= world:
+                    Maze.keys[maze_id].append([])
+
+                Maze.keys[maze_id][world] = []
+
+                for p in (
+                    lines[i]
+                    .replace(" ", "")
+                    .replace(")", "")
+                    .replace("(", "")
+                    .split(";")
+                ):
+                    Maze.keys[maze_id][world].append([int(n) for n in p.split(",")])
             elif "lvl:" in lines[i]:
                 i += 1
                 worlds[maze_id][world].append(int(lines[i].replace(" ", "")))
@@ -778,7 +1084,7 @@ class Nicks:
 
 
 class Server:
-    port = 8000
+    port = 8888
     proxy_port = 8080
 
     def getIp() -> str:
@@ -832,8 +1138,11 @@ class Server:
             cmd = data[2]
             message_id = data[-1]
 
+            if (not user_id in list(Maze.player_data.keys())) and cmd != "join":
+                print(f"Playerdata of user {user_id} not found")
+                return ""
+
             Nicks.set(user_id, nick)
-            print(data)
             if cmd == "join":
                 if len(data) == 4:
                     Maze.join(user_id, user_id, Config.default_world)
@@ -922,14 +1231,10 @@ class WS:
                             f"point;{rp(point[0])};{rp(point[1])};{Colors.calc_point(point[2])}"
                         )
 
-                    # for key in Maze.keys[maze_id][world]:
-                    #    # key;[x];[y];[world to tp];[x to tp];[y to tp]
-                    #    resp.append(
-                    #        f"key;{rp(key[0])};{rp(key[1])};{key[2]};{rp(key[3])};{rp(key[4])}"
-                    #    )
+                    for key in Maze.keys[maze_id][world]:
+                        # key;[x_full];[y_full];[world to tp];[x_full to tp];[y_full to tp]
+                        resp.append(f"key;{key[0]};{key[1]};{key[2]};{key[3]};{key[4]}")
 
-                    for r in resp:
-                        print(r)
                     await websocket.send("\n".join(resp).strip("\n"))
                     continue
 
@@ -967,8 +1272,9 @@ if __name__ == "__main__":
 
     if not Config.public_server in list(Maze.mazes.keys()):
         Maze.gen_maze(Config.public_server, Config.default_level, Config.default_world)
-        Maze.gen_points(Config.public_server, Config.default_world)
         Maze.render(Config.public_server, Config.default_world)
+        Maze.gen_points(Config.public_server, Config.default_world)
+        Maze.gen_keys(Config.public_server)
 
     Server.edit_script()
 

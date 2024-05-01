@@ -133,6 +133,7 @@ class Colors:
     red_bold = "\x1b[1;38;2;255;100;100m"
     reset = "\x1b[0m"
 
+
 # ========================= GAME class ========================= #
 
 
@@ -169,19 +170,23 @@ class Game:
         if toks[0] == "_r_":  # random string so i can handle it differently
             (
                 _,
-                nick,
                 message_id,
-                left,
-                front,
-                right,
-                is_on_point,
+                nick,
+                size,
                 x,
                 y,
+                x_point,
+                y_point,
+                x_key,
+                y_key,
                 dir,
-                team,
-                num_of_points,
+                sens,
             ) = toks
-            Game.to_serial.append(f"{message_id} {nick}_{left}{front}{right}{dir}{is_on_point}")
+            Game.to_serial.append(
+                #        8      1     1   1      1         1        1       1      1     1      = 17/22
+                # <id> <nick> <size> <x> <y> <x_point> <y_point> <x_key> <y_key> <dir> <sens>
+                f"{message_id} {nick} {size} {x} {y} {x_point} {y_point} {x_key} {y_key} {int(dir)+1} {int(sens)+1}"
+            )
 
             return
 
@@ -217,7 +222,9 @@ class Game:
             elif cmd == "move":
                 dir = toks[2].lower()
                 if dir not in Game.directions:
-                    print(f"{nick} >>> {cmd} {Colors.red_u}{dir}{Colors.reset}  {Colors.red_bold}(WRONG DIRECTION){Colors.reset}")
+                    print(
+                        f"{nick} >>> {cmd} {Colors.red_u}{dir}{Colors.reset}  {Colors.red_bold}(WRONG DIRECTION){Colors.reset}"
+                    )
                 else:
                     print(f"{nick} >>> {cmd} {dir}")
 
@@ -228,7 +235,9 @@ class Game:
             elif cmd == "rotate":
                 dir = toks[2].lower()
                 if dir not in Game.directions:
-                    print(f"{nick} >>> {cmd} {Colors.red_u}{dir}{Colors.reset}  {Colors.red_bold}(WRONG DIRECTION){Colors.reset}")
+                    print(
+                        f"{nick} >>> {cmd} {Colors.red_u}{dir}{Colors.reset}  {Colors.red_bold}(WRONG DIRECTION){Colors.reset}"
+                    )
                 else:
                     print(f"{nick} >>> {cmd} {dir}")
 
@@ -242,7 +251,9 @@ class Game:
                     nicks.set_nick(user_id, new_nick)
                     print(f"{nick} >>> {cmd} {new_nick}")
                 else:
-                    print(f"{nick} >>> {cmd} {Colors.red_u}{new_nick}{Colors.reset} {Colors.red_bold}(NAME TO LONG){Colors.reset}")
+                    print(
+                        f"{nick} >>> {cmd} {Colors.red_u}{new_nick}{Colors.reset} {Colors.red_bold}(NAME TO LONG){Colors.reset}"
+                    )
             elif cmd == "test":
                 print(f"{nick} >>> {cmd}")
 

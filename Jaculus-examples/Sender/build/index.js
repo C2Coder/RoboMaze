@@ -10,21 +10,39 @@ gpio.pinMode(join_button, gpio.PinMode.INPUT_PULLUP);
 gpio.pinMode(forward_button, gpio.PinMode.INPUT_PULLUP);
 gpio.pinMode(right_button, gpio.PinMode.INPUT_PULLUP);
 function recieve(_msg_id, _string) {
-    let _data = _string.split("_");
-    if (_data[0] != nickname) {
-        console.log("msg not for me");
-        return;
+    console.log("recieved");
+    for (let i = 0; i < _string.length; i++) {
+        console.log(_string.charCodeAt(i));
     }
-    let data = _data[1].split("");
-    let left = data[0]; //  \
-    let forward = data[1]; //  | "1" or "0" if wall is in the direction or not
-    let right = data[2]; //  /
-    let dir = data[3]; // 0 - 3 (up, right, down, left) - what direction i am facing 
-    let collected = data[4]; // "1" or "0" if collected a point
-    console.log(`left:${left} fwd:${forward} right:${right} dir:${dir} point:${collected}`);
+    //         8     1     1   1      1         1        1       1      1     1      = 17/22
+    // <id> <nick> <size> <x> <y> <x_point> <y_point> <x_key> <y_key> <dir> <sens>
+    const nick = _string.substring(0, 8);
+    const size = _string.charCodeAt(8);
+    // Player pos
+    const x = _string.charCodeAt(9);
+    const y = _string.charCodeAt(10);
+    // Nearest point pos
+    const x_point = _string.charCodeAt(11);
+    const y_point = _string.charCodeAt(12);
+    // Nearest key pos
+    const x_key = _string.charCodeAt(13);
+    const y_key = _string.charCodeAt(14);
+    // Player dir
+    const dir = _string.charCodeAt(15) - 1;
+    // Sensors (fwd, right, back, left)
+    const sens = _string.charCodeAt(16) - 1;
+    // Split binary string into an array of booleans
+    const s = sens.toString(2);
+    const [left, back, right, fwd] = s.padEnd(4, "0").split('');
+    console.log(sens);
+    console.log(s);
+    console.log(`fwd: ${fwd}`);
+    console.log(`right: ${right}`);
+    console.log(`back: ${back}`);
+    console.log(`left: ${left}`);
 }
-robomaze.create_cb(recieve);
 robomaze.begin(8); // sets up radio with group 8
+robomaze.create_cb(recieve);
 robomaze.send(`setname ${nickname}`, message_id); // sets your name/identifier to "something"
 gpio.on("falling", join_button, () => {
     last_message_id = message_id;

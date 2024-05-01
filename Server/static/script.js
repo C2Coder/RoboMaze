@@ -1,46 +1,11 @@
 server_ip = '10.0.1.30';
-http_port = 8000;
+http_port = 8888;
 ws_port = 8001;
 proxy_server_ip = 'hotncold.ddns.net';
 proxy_http_port = 8080;
 proxy_ws_port = 8001;
 update_interval = 1000;
 user_id = "c2c"; // default id
-
-colors = {
-  a: "#ffff50", // \
-  b: "#99ff00", // |
-  c: "#00ff99", // |
-  d: "#0099ff", // |
-  e: "#3300ff", // |  Used for Players
-  f: "#9900ff", // |
-  g: "#ff00ff", // |
-  h: "#ff0099", // |
-  i: "#ff3300", // |
-  j: "#ff6600", // /
-
-  A: "#ff0000", // \
-  B: "#ffff00", // |
-  C: "#00ff00", // |  Used for keys
-  D: "#00ffff", // |
-  E: "#0000ff", // /
-
-  F: "#222222", // \
-  G: "#440000", // |
-  H: "#444400", // |  Used for walls
-  I: "#004400", // |
-  J: "#004444", // |
-  K: "#000044", // /
-
-  L: "#ffffff", // \
-  M: "#ffaaaa", // |
-  N: "#ffffaa", // |  Used for empty spaces
-  O: "#aaffaa", // |
-  P: "#aaffff", // |
-  Q: "#aaaaff", // /
-
-  X: "#D0A000", // Point
-};
 
 async function start() {
   user_id = document.getElementById("user-id").value;
@@ -276,11 +241,11 @@ async function connectAndUpdate() {
 
             case "key":
               data.shift();
-              // x, y, color, x to tp, y to tp
-              ctx.fillStyle = data[2];
+              // [color, x, y, world_to_tp, x_to_tp, y_to_tp]
+              ctx.fillStyle = data[0];
               ctx.fillRect(
-                data[0] * pixel_size,
                 data[1] * pixel_size,
+                data[2] * pixel_size,
                 pixel_size,
                 pixel_size
               );
