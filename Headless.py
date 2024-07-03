@@ -1,4 +1,5 @@
 #!/bin/python3
+
 # ========================= LIBRARIES ========================= #
 import sys
 import serial

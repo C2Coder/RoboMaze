@@ -6,3 +6,4 @@ protocol.py
 controller.py
 frpc.ini
 frpc.toml
+venv

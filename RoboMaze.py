@@ -2,7 +2,7 @@
 # ========================= LIBRARIES ========================= #
 import pygame
 import sys
-import jacserial
+import serial
 import os
 import websockets
 import asyncio
@@ -35,7 +35,7 @@ try:
 except:
     print()
     print(
-        f"Usage python3 RoboPlace.py <user> <port> <Jaculus or Normal> <--no-post (optional)>"
+        f"Usage python3 RoboMaze.py <user> <port> <Jaculus or Normal> <--no-post (optional)>"
     )
     print()
     print(f"Example: python3 RoboMaze.py Nekdo123 COM26 Normal --no-post")
@@ -304,7 +304,7 @@ def main():
 
     # serial setup
 
-    with jacserial.Serial(port, baud, timeout=0) as jac:
+    with serial.Serial(port, baud, timeout=0) as jac:
         while running:
             event = pygame.event.wait()
             # Did the user hit a key?
@@ -321,6 +321,8 @@ def main():
                 while True:
                     # read serial
                     if mode == "Jaculus":
+                        print("Jaculus not supported (yet)")
+                        quit()
                         line = jac.readline_jac()
                     elif mode == "Normal":
                         line = jac.readline()

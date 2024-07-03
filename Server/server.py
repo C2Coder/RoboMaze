@@ -843,7 +843,7 @@ class Save:
         for file in Save.files:
             if not os.path.exists(f"{Save.folder}{file}{Save.extension}"):
                 continue
-            cur_time = datetime.now().strftime("%d.%m.%y-%H:%M:%S-")
+            cur_time = datetime.now().strftime("%d-%m-%y-%H-%M-%S-")
             os.system(
                 f"cp {Save.folder}{file}{Save.extension} {Save.backup_folder}{cur_time}{file}{Save.extension}"
             )
@@ -852,7 +852,7 @@ class Save:
         for file in Save.files:
             if not os.path.exists(f"{Save.folder}{file}{Save.extension}"):
                 continue
-            cur_time = datetime.now().strftime("%d.%m.%y-%H:%M:%S-")
+            cur_time = datetime.now().strftime("%d-%m-%y-%H-%M-%S-")
             os.rename(
                 f"{Save.folder}{file}{Save.extension}",
                 f"{Save.folder}{cur_time}{file}{Save.extension}",
@@ -1088,6 +1088,7 @@ class Server:
     proxy_port = 8080
 
     def getIp() -> str:
+        return "127.0.0.1"
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         return str(s.getsockname()[0])

@@ -1,4 +1,4 @@
-server_ip = '10.0.1.30';
+server_ip = '127.0.0.1';
 http_port = 8888;
 ws_port = 8001;
 proxy_server_ip = 'hotncold.ddns.net';
